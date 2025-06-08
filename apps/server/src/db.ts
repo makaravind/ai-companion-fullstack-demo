@@ -19,8 +19,8 @@ export const connectDB = async () => {
   };
   
   // CRUD operations for User
-  export const createUser = async (clerkUserId: string, username: string, email: string): Promise<IUser> => {
-    const newUser = new User({ clerkUserId, username, email });
+  export const createUser = async (clerkUserId: string, email: string): Promise<IUser> => {
+    const newUser = new User({ clerkUserId, email });
     return newUser.save();
   };
   
