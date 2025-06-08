@@ -2,8 +2,18 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import { connectDB } from './db';
+import { handleClerkWebhook } from './webhooks/clerk';
+import path from 'path';
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+
+if(!process.env.CLERK_WEBHOOK_SIGNING_SECRET) {
+  throw new Error('CLERK_WEBHOOK_SIGNING_SECRET is not set');
+}
+
+if(!process.env.CLERK_SECRET_KEY) {
+    throw new Error('CLERK_SECRET_KEY is not set');
+}
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -28,6 +38,9 @@ const corsOptions: cors.CorsOptions = {
 };
 
 app.use(cors(corsOptions));
+
+// Clerk webhook handler
+app.post('/api/webhooks/clerk', express.raw({ type: 'application/json' }), handleClerkWebhook);
 
 // Middleware to parse JSON request bodies
 app.use(express.json());
