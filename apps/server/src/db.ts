@@ -34,7 +34,7 @@ export const connectDB = async () => {
     return newConversation.save();
   };
   
-  export const findConversationsByClerkId = async (clerkUserId: string): Promise<IConversation> => {
+  export const findConversationsByClerkId = async (clerkUserId: string): Promise<IConversation[]> => {
     return Conversation.find({ clerkUserId }).sort({ updatedAt: -1 });
   };
   
@@ -48,6 +48,6 @@ export const connectDB = async () => {
     return newMessage.save();
   };
   
-  export const findMessagesByConversationId = async (conversationId: string): Promise<IMessage> => {
+  export const findMessagesByConversationId = async (conversationId: string): Promise<IMessage[]> => {
     return Message.find({ conversationId }).sort({ timestamp: 1 });
   };
