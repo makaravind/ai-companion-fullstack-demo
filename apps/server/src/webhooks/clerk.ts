@@ -37,4 +37,4 @@ export const handleClerkWebhook = async (req: Request, res: Response) => {
     console.error('Error verifying webhook:', err);
     res.status(400).send('Error verifying webhook');
   }
-}; 
+};
