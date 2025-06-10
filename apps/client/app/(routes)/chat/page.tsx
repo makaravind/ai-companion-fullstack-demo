@@ -1,11 +1,24 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@clerk/nextjs';
 import { useApi } from '@/hooks/useApi';
+
+function addConversationIdToUrl(conversationId: string) {
+  const url = new URL(window.location.href);
+  // add as path param  
+  url.pathname = `/chat/${conversationId}`;
+  window.history.pushState({}, '', url.toString());
+}
+
+function getConversationIdFromUrl() {
+  const url = new URL(window.location.href);
+  const id = url.pathname.split('/').pop();
+  return id !== 'chat' ? id : null;
+}
 
 // Define a local message type for this milestone
 interface MockChatMessage {
@@ -21,16 +34,20 @@ export default function ChatPage() {
   const { post } = useApi();
 
   // Placeholder for sending message (Socket.IO logic will be added later)
-  const sendChatMessage = async (e: React.FormEvent) => {
+  const sendChatMessage = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim()) {
-        // get response from mock api
-        const data = await post('/message', { message: input });
+        // get response from mock ai
+        const conversationId = getConversationIdFromUrl();
+        const data = await post('/message', { message: input, conversationId });
+        if(!conversationId) {
+          addConversationIdToUrl(data.conversationId);
+        }
         setMessages(prevMessages => [...prevMessages, { sender: 'user', content: input }]);
         setMessages(prevMessages => [...prevMessages, { sender: 'ai', content: data.response }]);
         setInput('');
     }
-  };
+  }, [input, post]);
 
   if(!isLoaded) {
     return <div>Loading...</div>;

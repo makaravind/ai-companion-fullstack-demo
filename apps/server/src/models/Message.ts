@@ -9,7 +9,7 @@ export interface IMessage extends Document {
 
 const MessageSchema: Schema = new Schema({
   conversationId: { type: Schema.Types.ObjectId, ref: 'Conversation', required: true, index: true },
-  sender: { type: String, enum: ['system', 'user', 'ai'], required: true },
+  sender: { type: String, enum: ['user', 'ai'], required: true },
   content: { type: String, required: true },
   timestamp: { type: Date, default: Date.now, index: true }
 });
