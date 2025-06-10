@@ -25,7 +25,7 @@ export default function ChatPage() {
     e.preventDefault();
     if (input.trim()) {
         // get response from mock api
-        const data = await post('/mock-ai-chat', { message: input });
+        const data = await post('/message', { message: input });
         setMessages(prevMessages => [...prevMessages, { sender: 'user', content: input }]);
         setMessages(prevMessages => [...prevMessages, { sender: 'ai', content: data.response }]);
         setInput('');
