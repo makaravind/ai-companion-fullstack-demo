@@ -2,9 +2,16 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { UserButton } from "@clerk/nextjs";
+import { useAuth, UserButton } from "@clerk/nextjs";
 
 export default function HomePage() {
+  const { isLoaded, isSignedIn } = useAuth();
+  if(!isLoaded) {
+    return <div>Loading...</div>;
+  }
+  if(!isSignedIn) {
+    return <div>Please sign in to continue</div>;
+  }
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <h1 className="text-4xl font-bold mb-8">Welcome to AI Companion!</h1>
