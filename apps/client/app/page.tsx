@@ -3,29 +3,53 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useAuth, UserButton } from "@clerk/nextjs";
+import { useEffect, useState } from "react";
+import { useApi } from "@/hooks/useApi";
 
 export default function HomePage() {
   const { isLoaded, isSignedIn } = useAuth();
-  if(!isLoaded) {
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { get } = useApi();
+
+  useEffect(() => {
+    if (isSignedIn) {
+      const fetchConversation = async () => {
+        try {
+          const data = await get("/conversation");
+          setConversationId(data.response.conversationId);
+        } catch (error) {
+          console.error("Failed to fetch conversation", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchConversation();
+    } else {
+      setLoading(false);
+    }
+  }, [isSignedIn]);
+
+  if (!isLoaded || loading) {
     return <div>Loading...</div>;
   }
-  if(!isSignedIn) {
+  if (!isSignedIn) {
     return <div>Please sign in to continue</div>;
   }
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <h1 className="text-4xl font-bold mb-8">Welcome to AI Companion!</h1>
       <div className="flex flex-col gap-4">
-        {/* Link to the mock API chat for testing */}
-        <Link href="/api-test" passHref>
-          <Button className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700">
-            Test Mock HTTP API
-          </Button>
-        </Link>
-        {/* Link to the real-time Socket.IO chat (will be implemented in Section VI) */}
+        {conversationId && (
+          <Link href={`/chat/${conversationId}`} passHref>
+            <Button className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+              Continue conversation
+            </Button>
+          </Link>
+        )}
         <Link href="/chat" passHref>
-          <Button className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-            Start Real-time Chat (Mock)
+          <Button className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700">
+            Start new conversation
           </Button>
         </Link>
       </div>
