@@ -2,6 +2,11 @@ import express, { Request, Response } from 'express';
 import Message from '../models/Message';
 import Conversation from '../models/Conversation';
 import { requireAuth } from '@clerk/express';
+import Pusher from 'pusher';
+import dotenv from 'dotenv';
+import path from 'path';
+
+dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
 
 const router = express.Router();
 
@@ -47,6 +52,30 @@ router.get('/conversations/:conversationId/messages', requireAuth(), async (req:
     }
 });
 
+function getPusher() {
+    if(!process.env.PUSHER_APP_ID){
+        throw new Error('PUSHER_APP_ID is not set');
+    }
+    if(!process.env.PUSHER_KEY){
+        throw new Error('PUSHER_KEY is not set');
+    }
+    if(!process.env.PUSHER_SECRET){
+        throw new Error('PUSHER_SECRET is not set');
+    }
+    if(!process.env.PUSHER_CLUSTER){
+        throw new Error('PUSHER_CLUSTER is not set');
+    }
+    return new Pusher({
+        appId: process.env.PUSHER_APP_ID!,
+        key: process.env.PUSHER_KEY!,
+        secret: process.env.PUSHER_SECRET!,
+        cluster: process.env.PUSHER_CLUSTER!,
+        useTLS: true
+    });
+}
+
+const pusher = getPusher();
+
 router.post('/message', requireAuth(), async (req: any, res: Response): Promise<void> => {
     try {
         const clerkUserId = req.auth().userId;
@@ -82,25 +111,32 @@ router.post('/message', requireAuth(), async (req: any, res: Response): Promise<
         });
         await userMessage.save();
     
-        const mockResponses = [
-            `That's an interesting thought about "${message}"!`,
-            `I understand. So, regarding "${message}"...`,
-            `Thank you for sharing "${message}". How can I help further?`,
-            `I'm thinking about "${message}". What else comes to mind?`
-        ];
-        const mockResponse = mockResponses[Math.floor(Math.random() * mockResponses.length)];
+        setTimeout(async () => {
+            const mockResponses = [
+                `That's an interesting thought about "${message}"!`,
+                `I understand. So, regarding "${message}"...`,
+                `Thank you for sharing "${message}". How can I help further?`,
+                `I'm thinking about "${message}". What else comes to mind?`
+            ];
+            const mockResponse = mockResponses[Math.floor(Math.random() * mockResponses.length)];
 
-        const aiMessage = new Message({
-            conversationId: currentConversation._id,
-            content: mockResponse,
-            sender: 'ai',
-        });
-        await aiMessage.save();
+            const aiMessage = new Message({
+                conversationId: currentConversation._id,
+                content: mockResponse,
+                sender: 'ai',
+            });
+            await aiMessage.save();
 
-        currentConversation.updatedAt = new Date();
-        await currentConversation.save();
-    
-        res.status(200).json({ response: mockResponse, conversationId: currentConversation._id });
+            currentConversation.updatedAt = new Date();
+            await currentConversation.save();
+
+            // publish message for realtime updates
+            pusher.trigger(`conversation-${currentConversation._id}`, 'message', {
+                message: mockResponse,
+                conversationId: currentConversation._id,
+            });
+        }, 500);
+        res.status(200).json({ response: "received", conversationId: currentConversation._id });
     } catch (error) {
         console.error('Error processing message:', error);
         res.status(500).json({ error: 'Internal server error' });

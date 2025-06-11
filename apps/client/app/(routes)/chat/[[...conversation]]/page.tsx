@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@clerk/nextjs';
 import { useApi } from '@/hooks/useApi';
 import { useParams } from 'next/navigation';
+import pusherClient from '@/lib/pusher-client';
 
 function addConversationIdToUrl(conversationId: string) {
   const url = new URL(window.location.href);
@@ -30,18 +31,32 @@ export default function ChatPage() {
   const {conversation} = useParams();
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    if(!conversation) {
+      return;
+    }
+    const channel = pusherClient.subscribe(`conversation-${conversation}`)
+      
+    channel.bind('message', (data: { message: string }) => {
+      console.log("Got message from pusher", data);
+      setMessages((prev) => [...prev, { sender: 'ai', content: data.message }])
+    })
+
+    return () => {
+      pusherClient.unsubscribe(`conversation-${conversation}`)
+    }
+  }, [conversation])
+
   // Placeholder for sending message (Socket.IO logic will be added later)
   const sendChatMessage = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim()) {
-        // get response from mock ai
         const conversationId = conversation as string;
         const data = await post('/message', { message: input, conversationId });
         if(!conversationId) {
           addConversationIdToUrl(data.conversationId);
         }
         setMessages(prevMessages => [...prevMessages, { sender: 'user', content: input }]);
-        setMessages(prevMessages => [...prevMessages, { sender: 'ai', content: data.response }]);
         setInput('');
     }
   }, [input, post, conversation]);
