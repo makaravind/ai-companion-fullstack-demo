@@ -81,7 +81,6 @@ export default function ChatPage() {
     // useApi hook has get method
     const fetchMessages = async () => {
       const messages = await get(`/conversations/${conversationId}/messages`); 
-      console.log("aravind", messages);
       setMessages(messages.map((msg: any) => ({ sender: msg.sender, content: msg.content })));
       setLoading(false);
     };
