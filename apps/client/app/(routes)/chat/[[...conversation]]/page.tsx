@@ -78,7 +78,6 @@ export default function ChatPage() {
   }, [input, post, conversationId]);
 
   useEffect(() => {
-    // useApi hook has get method
     const fetchMessages = async () => {
       const messages = await get(`/conversations/${conversationId}/messages`); 
       setMessages(messages.map((msg: any) => ({ sender: msg.sender, content: msg.content })));
