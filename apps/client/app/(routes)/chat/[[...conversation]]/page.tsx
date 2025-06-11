@@ -33,6 +33,7 @@ export default function ChatPage() {
 
   useEffect(() => {
     if(!conversation) {
+      setIsConnected(false);
       return;
     }
     const channel = pusherClient.subscribe(`conversation-${conversation}`)
@@ -41,6 +42,7 @@ export default function ChatPage() {
       console.log("Got message from pusher", data);
       setMessages((prev) => [...prev, { sender: 'ai', content: data.message }])
     })
+    setIsConnected(true);
 
     return () => {
       pusherClient.unsubscribe(`conversation-${conversation}`)
@@ -86,10 +88,10 @@ export default function ChatPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-      <h1 className="text-4xl font-bold mb-8">AI Companion (UI Demo)</h1>
+      <h1 className="text-4xl font-bold mb-8">AI Companion</h1>
       <Card className="w-full max-w-md bg-white dark:bg-gray-800 rounded-lg shadow-xl">
         <CardContent className="p-6">
-          <p className="mb-4 text-center">Status: {isConnected? 'Connected (UI Only)' : 'Disconnected (UI Only)'}</p>
+          <p className="mb-4 text-center">Status: {isConnected? 'Connected' : 'Disconnected (UI Only)'}</p>
           <ScrollArea className="h-[400px] w-full border border-gray-200 dark:border-gray-700 rounded-md p-4 mb-4 bg-gray-50 dark:bg-gray-700">
             {messages.length === 0 && (
               <p className="text-gray-500 dark:text-gray-400 text-center">Start a conversation...</p>
