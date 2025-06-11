@@ -17,7 +17,7 @@ export default function HomePage() {
       const fetchConversation = async () => {
         try {
           const data = await get("/conversation");
-          setConversationId(data.response.conversationId);
+          setConversationId(data.latestConversationId);
         } catch (error) {
           console.error("Failed to fetch conversation", error);
         } finally {
