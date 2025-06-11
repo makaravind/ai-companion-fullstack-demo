@@ -1,5 +1,7 @@
 ## AI Companion
 
+https://youtu.be/VZuhaHh9eD8
+
 ## Run the app
 #### Install packages
 ```
