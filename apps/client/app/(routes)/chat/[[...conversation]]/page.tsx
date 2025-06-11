@@ -1,23 +1,18 @@
 "use client";
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@clerk/nextjs';
 import { useApi } from '@/hooks/useApi';
+import { useParams } from 'next/navigation';
 
 function addConversationIdToUrl(conversationId: string) {
   const url = new URL(window.location.href);
   // add as path param  
   url.pathname = `/chat/${conversationId}`;
   window.history.pushState({}, '', url.toString());
-}
-
-function getConversationIdFromUrl() {
-  const url = new URL(window.location.href);
-  const id = url.pathname.split('/').pop();
-  return id !== 'chat' ? id : null;
 }
 
 // Define a local message type for this milestone
@@ -31,14 +26,16 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<MockChatMessage[]>([]);
   const [isConnected, setIsConnected] = useState(false); // Placeholder for connection status
   const { isLoaded, isSignedIn } = useAuth();
-  const { post } = useApi();
+  const { post , get} = useApi();
+  const {conversation} = useParams();
+  const [loading, setLoading] = useState(true);
 
   // Placeholder for sending message (Socket.IO logic will be added later)
   const sendChatMessage = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim()) {
         // get response from mock ai
-        const conversationId = getConversationIdFromUrl();
+        const conversationId = conversation as string;
         const data = await post('/message', { message: input, conversationId });
         if(!conversationId) {
           addConversationIdToUrl(data.conversationId);
@@ -47,14 +44,30 @@ export default function ChatPage() {
         setMessages(prevMessages => [...prevMessages, { sender: 'ai', content: data.response }]);
         setInput('');
     }
-  }, [input, post]);
+  }, [input, post, conversation]);
 
-  if(!isLoaded) {
+  useEffect(() => {
+    // useApi hook has get method
+    const fetchMessages = async () => {
+      const messages = await get(`/conversations/${conversation}/messages`); 
+      console.log("aravind", messages);
+      setMessages(messages.map((msg: any) => ({ sender: msg.sender, content: msg.content })));
+      setLoading(false);
+    };
+    if(conversation) {  
+      fetchMessages();
+    } else {
+      setLoading(false);
+    }
+  }, [conversation, get]);
+
+  if(!isLoaded || loading) {
     return <div>Loading...</div>;
   }
   if(!isSignedIn) {
     return <div>Please sign in to continue</div>;
   }
+
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
