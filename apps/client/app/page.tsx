@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { useAuth, UserButton } from "@clerk/nextjs";
+import { useAuth } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { useApi } from "@/hooks/useApi";
 
@@ -53,7 +53,6 @@ export default function HomePage() {
           </Button>
         </Link>
       </div>
-      <UserButton />
     </div>
   );
 }
