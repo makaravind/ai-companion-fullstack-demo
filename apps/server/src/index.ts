@@ -6,6 +6,7 @@ import { handleClerkWebhook } from './webhooks/clerk';
 import path from 'path';
 import messagesRouter from './routes/messages';
 import { clerkMiddleware } from '@clerk/express';
+import { requestLogger, errorHandler, notFoundHandler } from './middleware/handlers';
 
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
@@ -41,6 +42,9 @@ const corsOptions: cors.CorsOptions = {
 
 app.use(cors(corsOptions));
 
+// Request logger
+app.use(requestLogger);
+
 // Clerk webhook handler
 app.post('/api/webhooks/clerk', express.raw({ type: 'application/json' }), handleClerkWebhook as any);
 
@@ -57,6 +61,12 @@ app.use('/api', messagesRouter);
 app.get('/', (req, res) => {
   res.status(200).send('AI Companion Backend is running!');
 });
+
+// Not found handler
+app.use(notFoundHandler);
+
+// Error handler
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
