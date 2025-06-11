@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@clerk/nextjs';
 import { useApi } from '@/hooks/useApi';
 import { useParams } from 'next/navigation';
-import pusherClient from '@/lib/pusher-client';
+import pusherClient from '@/lib/pusher-client'; 
 
 function addConversationIdToUrl(conversationId: string) {
   const url = new URL(window.location.href);
@@ -22,21 +22,35 @@ interface MockChatMessage {
   content: string;
 }
 
+function useConversationId() {
+  const {conversation} = useParams();
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  useEffect(() => {
+    if(conversation) {
+      setConversationId(conversation as string);
+    }
+  }, [conversation]);
+  return {conversationId, setConversationId};
+}
+
 export default function ChatPage() {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<MockChatMessage[]>([]);
-  const [isConnected, setIsConnected] = useState(false); // Placeholder for connection status
+  const [isConnected, setIsConnected] = useState(false);
   const { isLoaded, isSignedIn } = useAuth();
   const { post , get} = useApi();
-  const {conversation} = useParams();
+  const {conversationId, setConversationId} = useConversationId();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if(!conversation) {
+    if(!conversationId) {
       setIsConnected(false);
       return;
     }
-    const channel = pusherClient.subscribe(`conversation-${conversation}`)
+
+    console.log("initializing pusher for conversation", conversationId);
+
+    const channel = pusherClient.subscribe(`conversation-${conversationId}`)
       
     channel.bind('message', (data: { message: string }) => {
       console.log("Got message from pusher", data);
@@ -45,38 +59,38 @@ export default function ChatPage() {
     setIsConnected(true);
 
     return () => {
-      pusherClient.unsubscribe(`conversation-${conversation}`)
+      pusherClient.unsubscribe(`conversation-${conversationId}`)
     }
-  }, [conversation])
+  }, [conversationId])
 
   // Placeholder for sending message (Socket.IO logic will be added later)
   const sendChatMessage = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim()) {
-        const conversationId = conversation as string;
         const data = await post('/message', { message: input, conversationId });
         if(!conversationId) {
           addConversationIdToUrl(data.conversationId);
+          setConversationId(data.conversationId);
         }
         setMessages(prevMessages => [...prevMessages, { sender: 'user', content: input }]);
         setInput('');
     }
-  }, [input, post, conversation]);
+  }, [input, post, conversationId]);
 
   useEffect(() => {
     // useApi hook has get method
     const fetchMessages = async () => {
-      const messages = await get(`/conversations/${conversation}/messages`); 
+      const messages = await get(`/conversations/${conversationId}/messages`); 
       console.log("aravind", messages);
       setMessages(messages.map((msg: any) => ({ sender: msg.sender, content: msg.content })));
       setLoading(false);
     };
-    if(conversation) {  
+    if(conversationId) {  
       fetchMessages();
     } else {
       setLoading(false);
     }
-  }, [conversation, get]);
+  }, [conversationId, get]);
 
   if(!isLoaded || loading) {
     return <div>Loading...</div>;
@@ -91,7 +105,7 @@ export default function ChatPage() {
       <h1 className="text-4xl font-bold mb-8">AI Companion</h1>
       <Card className="w-full max-w-md bg-white dark:bg-gray-800 rounded-lg shadow-xl">
         <CardContent className="p-6">
-          <p className="mb-4 text-center">Status: {isConnected? 'Connected' : 'Disconnected (UI Only)'}</p>
+          <p className="mb-4 text-center">Status: {isConnected? 'Connected' : 'Disconnected'}</p>
           <ScrollArea className="h-[400px] w-full border border-gray-200 dark:border-gray-700 rounded-md p-4 mb-4 bg-gray-50 dark:bg-gray-700">
             {messages.length === 0 && (
               <p className="text-gray-500 dark:text-gray-400 text-center">Start a conversation...</p>
